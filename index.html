@@ -12,8 +12,25 @@
         /* UI DASHBOARD */
         .dashboard { display: grid; grid-template-columns: 600px 320px; gap: 20px; max-width: 1000px; margin-bottom: 20px; }
         .camera-panel { background: #3e2723; padding: 10px; border-radius: 12px; position: relative; border: 5px solid #2b1b19; overflow: hidden; }
-        #video { width: 100%; height: 450px; background: #000; transform: scaleX(-1); object-fit: cover; }
-        #timer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 150px; color: white; font-weight: bold; display: none; z-index: 10; }
+        
+        #video { width: 100%; height: 450px; background: #000; transform: scaleX(-1); object-fit: cover; display: block; }
+        
+        /* ELEMEN FLASH */
+        #flash-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+        .flash-active { animation: flashAnim 0.4s ease-out; }
+        @keyframes flashAnim {
+            0% { opacity: 0.9; }
+            100% { opacity: 0; }
+        }
+
+        #timer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 150px; color: white; font-weight: bold; display: none; z-index: 10; text-shadow: 0 0 20px rgba(0,0,0,0.5); }
 
         .controls { background: #e8e2d6; padding: 25px; border-radius: 12px; border: 1px solid #bcaf96; display: flex; flex-direction: column; gap: 12px; }
         .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -36,27 +53,9 @@
         }
         
         .nw-header-lines { border-top: 4px solid var(--ink); border-bottom: 2px solid var(--ink); height: 8px; width: 100%; }
-        
-        /* ADJUSTED: Tulisan Gunadarma pas di tengah & agak kebawah */
-        .nw-title-container { 
-            width: 100%; 
-            text-align: center; 
-            margin: 35px 0 25px 0; /* Menambah margin atas agar lebih turun */
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-        }
-        .nw-title { 
-            font-size: 88px; 
-            font-weight: 900; 
-            font-family: sans-serif; 
-            letter-spacing: -2px; 
-            line-height: 1; /* Diubah agar centering vertikal lebih akurat */
-            margin: 0; 
-        }
-        
+        .nw-title-container { width: 100%; text-align: center; margin: 35px 0 25px 0; display: flex; justify-content: center; align-items: center; }
+        .nw-title { font-size: 88px; font-weight: 900; font-family: sans-serif; letter-spacing: -2px; line-height: 1; margin: 0; }
         .nw-sub-header { display: flex; justify-content: space-between; font-weight: bold; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); padding: 8px 0; margin-bottom: 20px; font-size: 13px; width: 100%; }
-        
         .nw-breaking-container { width: 100%; text-align: center; border-bottom: 4px solid var(--ink); margin-bottom: 25px; padding-bottom: 5px; display: flex; justify-content: center; }
         .nw-breaking { font-size: 85px; font-weight: bold; line-height: 1; letter-spacing: -2px; margin: 0; }
         
@@ -71,7 +70,6 @@
         .big-img { height: 440px; }
 
         .nw-footer-text { font-size: 11px; font-style: italic; margin-top: 15px; text-align: justify; line-height: 1.4; color: var(--ink); }
-
         .nw-brand-bottom { text-align: center; font-size: 18px; font-weight: bold; margin-top: 60px; letter-spacing: 4px; border-top: 1px solid #aaa; padding-top: 15px; width: 100%; }
     </style>
 </head>
@@ -81,6 +79,7 @@
 
     <div class="dashboard">
         <div class="camera-panel">
+            <div id="flash-overlay"></div>
             <div id="timer">3</div>
             <video id="video" autoplay playsinline></video>
         </div>
@@ -136,6 +135,7 @@
 
     <script>
         const video = document.getElementById('video');
+        const flashOverlay = document.getElementById('flash-overlay');
         let shots = [];
         let activeFilter = 'none';
 
@@ -156,6 +156,12 @@
             video.style.filter = activeFilter;
         }
 
+        function triggerFlash() {
+            flashOverlay.classList.remove('flash-active');
+            void flashOverlay.offsetWidth; 
+            flashOverlay.classList.add('flash-active');
+        }
+
         function startTimer() {
             if(shots.length >= 2) return;
             let count = 3;
@@ -169,6 +175,7 @@
                 else {
                     clearInterval(countdown);
                     tUI.style.display = 'none';
+                    triggerFlash();
                     takeSnapshot();
                 }
             }, 1000);
@@ -192,10 +199,12 @@
             document.getElementById('step').innerText = shots.length === 1 ? "2" : "✓";
 
             if(shots.length === 2) {
-                document.getElementById('newspaper-wrapper').style.display = 'block';
-                document.getElementById('dl-btn').style.display = 'block';
-                document.getElementById('cap-btn').style.display = 'none';
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                setTimeout(() => {
+                    document.getElementById('newspaper-wrapper').style.display = 'block';
+                    document.getElementById('dl-btn').style.display = 'block';
+                    document.getElementById('cap-btn').style.display = 'none';
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 400);
             }
         }
 
@@ -207,7 +216,7 @@
                 backgroundColor: "#efe9db"
             }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'MHSJEPS_Gundar_Final.png';
+                link.download = 'MHSJEPS_Gundar_Full.png';
                 link.href = canvas.toDataURL();
                 link.click();
             });
