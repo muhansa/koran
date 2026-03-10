@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHSJEPS Gunadarma Booth</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --paper: #efe9db; --ink: #1a1a1a; }
+        body { background-color: #d4cfc3; font-family: 'Times New Roman', serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        /* UI DASHBOARD */
+        .dashboard { display: grid; grid-template-columns: 600px 320px; gap: 20px; max-width: 1000px; margin-bottom: 20px; }
+        .camera-panel { background: #3e2723; padding: 10px; border-radius: 12px; position: relative; border: 5px solid #2b1b19; overflow: hidden; }
+        #video { width: 100%; height: 450px; background: #000; transform: scaleX(-1); object-fit: cover; }
+        #timer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 150px; color: white; font-weight: bold; display: none; z-index: 10; }
+
+        .controls { background: #e8e2d6; padding: 25px; border-radius: 12px; border: 1px solid #bcaf96; display: flex; flex-direction: column; gap: 12px; }
+        .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .f-btn { padding: 10px; border: 1px solid #999; cursor: pointer; background: white; font-weight: bold; border-radius: 4px; font-size: 11px; }
+        .f-btn.active { background: #a0522d; color: white; border-color: #a0522d; }
+        .btn { padding: 15px; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-size: 14px; }
+        .btn-capture { background: #a0522d; color: white; }
+        .btn-download { background: #2e7d32; color: white; display: none; }
+
+        /* NEWSPAPER TEMPLATE */
+        #newspaper-wrapper { margin-top: 30px; display: none; }
+        #newspaper-template { 
+            width: 800px; 
+            background: var(--paper); 
+            padding: 45px; 
+            color: var(--ink); 
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .nw-header-lines { border-top: 4px solid var(--ink); border-bottom: 2px solid var(--ink); height: 8px; width: 100%; }
+        
+        /* ADJUSTED: Tulisan Gunadarma pas di tengah & agak kebawah */
+        .nw-title-container { 
+            width: 100%; 
+            text-align: center; 
+            margin: 35px 0 25px 0; /* Menambah margin atas agar lebih turun */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        .nw-title { 
+            font-size: 88px; 
+            font-weight: 900; 
+            font-family: sans-serif; 
+            letter-spacing: -2px; 
+            line-height: 1; /* Diubah agar centering vertikal lebih akurat */
+            margin: 0; 
+        }
+        
+        .nw-sub-header { display: flex; justify-content: space-between; font-weight: bold; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); padding: 8px 0; margin-bottom: 20px; font-size: 13px; width: 100%; }
+        
+        .nw-breaking-container { width: 100%; text-align: center; border-bottom: 4px solid var(--ink); margin-bottom: 25px; padding-bottom: 5px; display: flex; justify-content: center; }
+        .nw-breaking { font-size: 85px; font-weight: bold; line-height: 1; letter-spacing: -2px; margin: 0; }
+        
+        .nw-content { display: grid; grid-template-columns: 320px 1fr; gap: 25px; width: 100%; }
+        .nw-col-left { display: flex; flex-direction: column; }
+        .nw-hist-title { font-size: 32px; font-weight: bold; line-height: 0.9; margin-bottom: 12px; }
+        .nw-hist-text { font-size: 10.2px; text-align: justify; line-height: 1.4; font-style: italic; margin-bottom: 15px; }
+        
+        .photo-frame { background: #000; border: 2px solid #000; overflow: hidden; }
+        .res-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .small-img { height: 180px; }
+        .big-img { height: 440px; }
+
+        .nw-footer-text { font-size: 11px; font-style: italic; margin-top: 15px; text-align: justify; line-height: 1.4; color: var(--ink); }
+
+        .nw-brand-bottom { text-align: center; font-size: 18px; font-weight: bold; margin-top: 60px; letter-spacing: 4px; border-top: 1px solid #aaa; padding-top: 15px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <h2 style="color:#3e2723; margin-bottom:15px; letter-spacing: 2px;">MHSJEPS</h2>
+
+    <div class="dashboard">
+        <div class="camera-panel">
+            <div id="timer">3</div>
+            <video id="video" autoplay playsinline></video>
+        </div>
+
+        <div class="controls">
+            <h3 style="margin:0; text-align:center;">CONTROLS</h3>
+            <div class="filter-grid">
+                <button class="f-btn active" onclick="setEffect('normal', this)">NORMAL</button>
+                <button class="f-btn" onclick="setEffect('bw', this)">B&W</button>
+                <button class="f-btn" onclick="setEffect('sepia', this)">SEPIA</button>
+                <button class="f-btn" onclick="setEffect('retro', this)">RETRO</button>
+            </div>
+            <button class="btn btn-capture" id="cap-btn" onclick="startTimer()">📸 AMBIL FOTO (<span id="step">1</span>/2)</button>
+            <button class="btn btn-download" id="dl-btn" onclick="saveKoran()">📥 UNDUH KORAN</button>
+            <button class="btn" style="background:#444; color:white;" onclick="location.reload()">🔄 RESET</button>
+        </div>
+    </div>
+
+    <div id="newspaper-wrapper">
+        <div id="newspaper-template">
+            <div class="nw-header-lines"></div>
+            <div class="nw-title-container">
+                <h1 class="nw-title">GUNADARMA</h1>
+            </div>
+            <div class="nw-sub-header">
+                <span>gunadarma.ac.id ★</span>
+                <span>CAMPUS SERIES</span>
+                <span>★ UNIVERSITAS GUNADARMA</span>
+            </div>
+
+            <div class="nw-breaking-container">
+                <h2 class="nw-breaking">BREAKING NEWS</h2>
+            </div>
+
+            <div class="nw-content">
+                <div class="nw-col-left">
+                    <div class="nw-hist-title">SEJARAH<br>GUNADARMA</div>
+                    <div class="nw-hist-text">
+                        Pada 7 Agustus 1981 berdiri Program Pendidikan Ilmu Komputer (PPIK) di Jakarta yang tiga tahun kemudian berubah menjadi Sekolah Tinggi Manajemen Informatika dan Komputer (STMIK) Gunadarma. Enam tahun kemudian, tepatnya pada 13 Januari 1990, berdiri Sekolah Tinggi Ilmu Ekonomi Gunadarma (STIE Gunadarma). Pada tahun 1993, STMIK dan STIE membuka Program Magister dengan konsentrasi Manajemen Sistem Informasi untuk STMIK serta Magister Manajemen untuk STIE. Selanjutnya, melalui S.K. Dirjen DIKTI No.92/Kep/Dikti/1996 tertanggal 3 April 1996, STMIK dan STIE Gunadarma melebur menjadi UNIVERSITAS GUNADARMA bersama dengan empat fakultas baru yaitu Fakultas Teknologi Industri, Fakultas Teknik Sipil dan Perencanaan, Fakultas Psikologi, dan Fakultas Sastra. Membuka milenium baru, Universitas Gunadarma membuka Program Doktor Ilmu Ekonomi berdasarkan ijin Dirjen Dikti Departemen Pendidikan Republik Indonesia No. 55/DIKTI/2000 yang diikuti dengan pembukaan Program Doktor Teknologi Informasi berdasarkan ijin Dirjen Dikti Departemen Pendidikan Republik Indonesia No. 3716/P/T/2002.
+                    </div>
+                    <div class="photo-frame small-img"><img id="res-2" class="res-img"></div>
+                </div>
+                <div class="nw-col-right">
+                    <div class="photo-frame big-img"><img id="res-1" class="res-img"></div>
+                    <div class="nw-footer-text">
+                        Universitas Gunadarma memiliki banyak jurusan yang terbagi dalam beberapa fakultas (Teknik Industri, Ilmu Komputer, Ekonomi, Psikologi, Sastra, Sipil) dengan jenjang D3, S1, S2, hingga S3. Lokasi kampus gunadarma tersebar di wilayah Jakarta, Depok, Kalimalang, dan karawaci.
+                    </div>
+                </div>
+            </div>
+            <div class="nw-brand-bottom">MHSJEPS</div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        let shots = [];
+        let activeFilter = 'none';
+
+        const filterMap = {
+            'normal': 'none',
+            'bw': 'grayscale(100%) contrast(1.1)',
+            'sepia': 'sepia(80%) brightness(95%)',
+            'retro': 'grayscale(20%) sepia(40%) contrast(1.1)'
+        };
+
+        navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } })
+            .then(s => video.srcObject = s);
+
+        function setEffect(eff, btn) {
+            document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeFilter = filterMap[eff];
+            video.style.filter = activeFilter;
+        }
+
+        function startTimer() {
+            if(shots.length >= 2) return;
+            let count = 3;
+            const tUI = document.getElementById('timer');
+            tUI.style.display = 'block';
+            tUI.innerText = count;
+
+            const countdown = setInterval(() => {
+                count--;
+                if(count > 0) tUI.innerText = count;
+                else {
+                    clearInterval(countdown);
+                    tUI.style.display = 'none';
+                    takeSnapshot();
+                }
+            }, 1000);
+        }
+
+        function takeSnapshot() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.filter = activeFilter;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const data = canvas.toDataURL('image/png');
+            shots.push(data);
+            
+            document.getElementById(`res-${shots.length}`).src = data;
+            document.getElementById('step').innerText = shots.length === 1 ? "2" : "✓";
+
+            if(shots.length === 2) {
+                document.getElementById('newspaper-wrapper').style.display = 'block';
+                document.getElementById('dl-btn').style.display = 'block';
+                document.getElementById('cap-btn').style.display = 'none';
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+        }
+
+        function saveKoran() {
+            const target = document.getElementById('newspaper-template');
+            html2canvas(target, { 
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#efe9db"
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'MHSJEPS_Gundar_Final.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
